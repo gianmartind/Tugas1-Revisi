@@ -5,7 +5,6 @@ date: "3/21/2021"
 output:
   slidy_presentation: 
     df_print: paged
-  
 ---
 
 ```{r setup, include=FALSE}
@@ -32,14 +31,13 @@ Berikut penjelasan singkat tiap kolom dalam dataset IMDB-Movie-Data.csv:
 
 
 
-## Berapa jumlah Genre yang dihasilkan per tahunnya?
-Akan dicari jumlah Genre yang dihasilkan per tahunnya, dan rata-rata Revenue untuk tiap kategori. Dan selanjutnya kan dilihat hubungan antar keduanya.
+## 1. Berapa jumlah Genre yang dihasilkan per tahunnya?
+
 
 Diperlukan Tabel seperti berikut:
 
-- DataGenreYear(Year, Genre, Count, MeanRev)
-- DataGenreTotal(Genre, Count, MeanRev)
-
+- DataGenreYear(Year, Genre, Count)
+- DataGenreTotal(Genre, Count)
 
 
 Keterangan:
@@ -50,7 +48,6 @@ Keterangan:
             <li>Year	    : Merupakan tahun rilis dari sebuah film. Range yang digunakan adalah tahun 2006 – 2016 </li>
             <li>Genre	    : Merupakan jenis/kategori film</li>
             <li>Count	    : Jumlah Film per Genre</li>
-            <li>MeanRev   : Merupakan rata-rata penghasilan film yang dihasilkan per genre dalam satuan juta dolar USD</li>
         </ul>
     </li>
 </ul>
@@ -72,7 +69,7 @@ head(data)
 
 ## Penyiapan Data
 
-Buat 3 kolom baru untuk hasil pemisahan Genre
+Dari dataframe yang setiap baris di kolom Genre-nya memiliki lebih dari satu genre, akan dibuat 3 kolom baru (jumlah genre untuk satu film tidak mungkin melebihi 3). Setiap kolom baru yang dibuat (Genre1, Genre2, Genre3) akan berisi hasil pemisahan Genre.
 ```{r echo=TRUE}
 i <- 1
 while (i <= nrow(data)) {
@@ -82,13 +79,151 @@ while (i <= nrow(data)) {
   data$Genre3[i] <- genres[3]
   i <- i + 1
 }
-head(data)
+#Tampilkan kolom: Title, Genre, Genre1, Genre2, Genre3
+head(data %>% select(Title, Genre, Genre1, Genre2, Genre3))
 ```
 
 
 ## Penyiapan Data (2)
 
-Buat dataframe baru dengan menggabungkan Genre dari 3 kolom ke satu kolom dengan menambahkan 1 baris untuk tiap Genre
+Buat dataframe baru dengan menggabungkan Genre dari 3 kolom ke satu kolom dengan menambahkan 1 baris untuk tiap Genre. Untuk film yang memiliki lebih dari 1 genre akan muncul sebanyak jumlah genre yang dimiliki film tersebut.
+```{r echo=TRUE}
+dataGenre1 <- data.frame(data$Title, data$Year, data$Genre1)
+colnames(dataGenre1) <- c("Title", "Year", "Genre")
+
+dataGenre2 <- data.frame(data$Title, data$Year, data$Genre2)
+colnames(dataGenre2) <- c("Title", "Year", "Genre")
+dataGenre2 <- dataGenre2 %>% drop_na(Genre)
+
+dataGenre3 <- data.frame(data$Title, data$Year, data$Genre3)
+colnames(dataGenre3) <- c("Title", "Year", "Genre")
+dataGenre3 <- dataGenre3 %>% drop_na(Genre)
+
+dataGenre <- bind_rows(dataGenre1, dataGenre2, dataGenre3)
+dataGenre %>% arrange(Title)
+```
+
+
+## Penyiapan Data (3)
+
+Kelompokkan data berdasarkan Tahun dan Genre, lalu hitung jumlah film yang dihasilkan per tiap kategori.
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+dataGenreYear <- dataGenre %>%
+                  group_by(Year, Genre) %>%
+                  summarise(Count = n())
+
+dataGenreYear
+```
+
+## Analisis Data
+
+Dibuat plot untuk menunjukan jumlah film yang diproduksi untuk setiap genre tiap tahunnya.
+```{r echo=TRUE, out.width="25%", out.height="25%", fig.show='hold'}
+allGenre <- unique(dataGenreYear$Genre)
+
+for(genre_ in allGenre){
+  dataOneGenre <- dataGenreYear %>% filter(Genre == sprintf("%s", genre_))
+  print(ggplot(dataOneGenre)+
+          geom_col(aes(x = factor(Year, levels = 2006:2016), y = Count), fill="cadetblue1")+
+          geom_text(aes(label=as.integer(Count), x = factor(Year, levels = 2006:2016), y = Count))+
+          scale_x_discrete(breaks=factor(2006:2016), drop=FALSE)+
+          theme(axis.text=element_text(size=14), axis.title=element_text(size=24), plot.title = element_text(size = 36, face = "bold"))+
+          ggtitle(sprintf("Genre: %s", genre_))+
+          xlab("Tahun")+
+          ylab("Jumlah film"))
+}
+```
+
+## Penyiapan Data (4)
+Buat dataframe untuk menghitung jumlah film yang dihasilkan untuk tiap genre dari seluruh tahun.
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+dataGenreTotal <- dataGenreYear %>%
+  group_by(Genre) %>%
+  summarise(Count = sum(Count))
+
+dataGenreTotal
+```
+
+## Analisis Data (2)
+Kami membuat barplot horizontal yang menunjukkan total jumlah film 	bedasarkan genre. Untuk y-label adalah genre film. Untuk x-label menggunakan count 	yang merupakan banyaknya jumlah film. Berikut barplot yang kami buat:
+
+```{r echo=TRUE, fig.show='hold', fig.align='center', out.width="125%", out.width="125%"}
+ggplot(dataGenreTotal, aes(x = reorder(Genre, Count), y = Count))+
+  geom_bar(stat = 'identity')+
+ 	coord_flip()+
+ 	xlab("Genre")+
+  ylab("Count")+
+  theme(axis.text=element_text(size=12), axis.title=element_text(size=24), plot.title = element_text(size = 20, face = "bold"))+
+  ggtitle("Jumlah Seluruh Film Bedasarkan Genre")
+```
+## Insight dan Manfaat
+Dari Visualisasi plot-plot yang kami sudah buat didapatkan beberapa insight:
+
+<ul>
+  <li>
+    Drama menjadi genre yang paling banyak dipilh sebagai genre untuk sebuah film, disusul Action dan Comedy. Genre Musical dan Western jarang dibuat sebagai film. 
+  </li>
+  <li>
+    Produksi film pada tahun 2016 meroket daripada tahun-tahun sebelumnya, terutama pada film-film di genre Action, Drama, Adventure, Animation, Biography, Comedy, Drime, Horror, dan History
+  </li>
+  <li>
+    Ada beberapa genre yang tidak tercatat—atau bisa saja tidak ada film di tahun itu diproduksi. Berikut Rinciannya:
+    <ul>
+      <li>2006: Western, Musical</li>
+      <li>2007: Western, War, Sport</li>
+      <li>2008: Western</li>
+      <li>2009: Western, Musical, Music, History</li>
+      <li>2010: Musical, Sport, Music, History</li>
+      <li>2011: Western, Musical, War, History</li>
+      <li>2012: War, Sport</li>
+      <li>2013: Musical, War</li>
+      <li>2014: Musical</li>
+      <li>2015: Musical</li>
+      <li>2016: Musical</li>
+    </ul>
+  </li>
+</ul>
+
+## Penggalian Insight Baru
+Dari analisis yang telah dilakukan didapat beberapa insight seperti yang sudah dipaparkan. Dari insight-insight tersebut kami berusaha untuk menggali lebih dalam untuk mendapatkan insight baru, dengan melihat bagaimana hubungan antara pendapatan (Revenue) yang dihasilkan oleh film dan jumlah film yang diproduksi.
+
+Untuk itu diperlukan tabel dengan bentuk sebagai berikut:
+
+- DataGenreYear(Year, Genre, Count, MeanRev)
+- DataGenreTotal(Genre, Count, MeanRev)
+
+
+Keterangan:
+
+<ul>
+    <li>
+        <ul>
+            <li>Year	    : Merupakan tahun rilis dari sebuah film. Range yang digunakan adalah tahun 2006 – 2016 </li>
+            <li>Genre	    : Merupakan jenis/kategori film</li>
+            <li>Count	    : Jumlah Film per Genre</li>
+            <li>MeanRev   : Rata-rata pendapatan untuk tiap kategori</li> 
+        </ul>
+    </li>
+</ul>
+
+## Penyiapan Data 
+Dari dataframe yang setiap baris di kolom Genre-nya memiliki lebih dari satu genre, akan dibuat 3 kolom baru (jumlah genre untuk satu film tidak mungkin melebihi 3). Setiap kolom baru yang dibuat (Genre1, Genre2, Genre3) akan berisi hasil pemisahan Genre.
+```{r echo=TRUE}
+i <- 1
+while (i <= nrow(data)) {
+  genres <- unlist(strsplit(data$Genre[i], ",", fixed = TRUE))
+  data$Genre1[i] <- genres[1]
+  data$Genre2[i] <- genres[2]
+  data$Genre3[i] <- genres[3]
+  i <- i + 1
+}
+#Tampilkan kolom: Title, Genre, Genre1, Genre2, Genre3
+head(data %>% select(Title, Genre, Genre1, Genre2, Genre3, Revenue..Millions.))
+```
+
+## Penyiapan Data (2)
+Buat dataframe baru dengan menggabungkan Genre dari 3 kolom ke satu kolom dengan menambahkan 1 baris untuk tiap Genre. Untuk film yang memiliki lebih dari 1 genre akan muncul sebanyak jumlah genre yang dimiliki film tersebut. Sertakan juga kolom Revenue untuk menghitung pendapatan tiap film.
+
 ```{r echo=TRUE}
 dataGenre1 <- data.frame(data$Title, data$Year, data$Genre1, data$Revenue..Millions.)
 colnames(dataGenre1) <- c("Title", "Year", "Genre", "Revenue")
@@ -102,42 +237,41 @@ colnames(dataGenre3) <- c("Title", "Year", "Genre", "Revenue")
 dataGenre3 <- dataGenre3 %>% drop_na(Genre)
 
 dataGenre <- bind_rows(dataGenre1, dataGenre2, dataGenre3)
-dataGenre
+dataGenre %>% arrange(Title)
 ```
-
 
 ## Penyiapan Data (3)
 
-Kelompokkan data berdasarkan Tahun dan Genre, lalu hitung jumlah film yang dihasilkan dan rata-rata Revenue-nya
+Kelompokkan data berdasarkan Tahun dan Genre, lalu hitung jumlah film yang dihasilkan per tiap kategori dan rata-rata pendapatan dari film-film tersebut.
 ```{r echo=TRUE, warning=FALSE, message=FALSE}
 dataGenreYear <- dataGenre %>%
                   group_by(Year, Genre) %>%
                   summarise(Count = n(), MeanRev = mean(Revenue, na.rm = TRUE))
 
-#Untuk kolom bernilai NaN akan diubah nilainya menjadi 0
-dataGenreYear$MeanRev[is.nan(dataGenreYear$MeanRev)] <- 0
-
 dataGenreYear
 ```
-
 ## Analisis Data
-
-Gambarkan plot yang membandingkan Revenue dengan jumlah film untuk masing-masing Genre
+Dibuat plot untuk menunjukan jumlah film yang diproduksi untuk setiap genre tiap tahunnya dan hubungannya dengan Revenue.
 ```{r echo=TRUE, out.width="25%", out.height="25%", fig.show='hold'}
 allGenre <- unique(dataGenreYear$Genre)
 
 for(genre_ in allGenre){
-  dataOneGenre <- dataGenreYear %>% filter(Genre == sprintf("%s", genre_))
-  print(ggplot(dataOneGenre)+
-          geom_col(aes(x = as.factor(Year), y = Count * (max(dataOneGenre$MeanRev, na.rm = TRUE)/max(dataOneGenre$Count, na.rm = TRUE))), fill="cadetblue1")+
-          geom_line(aes(x = as.factor(Year), y = MeanRev, group = Genre), size = 1.5)+
-          geom_text(aes(label=as.integer(MeanRev), x = as.factor(Year), y = MeanRev))+
-          geom_text(aes(label=as.integer(Count), x = as.factor(Year), y = Count * (max(dataOneGenre$MeanRev, na.rm = TRUE)/max(dataOneGenre$Count, na.rm = TRUE))))+
-          scale_y_continuous(sec.axis = sec_axis(~ . / (max(dataOneGenre$MeanRev, na.rm = TRUE)/max(dataOneGenre$Count, na.rm = TRUE)), name = "Count"))+
-          theme(axis.text=element_text(size=14), axis.title=element_text(size=24), plot.title = element_text(size = 36, face = "bold"))+
-          ggtitle(sprintf("Genre: %s", genre_))+
-          xlab("Year")+
-          ylab("Revenue (in million dollars)"))
+dataOneGenre <- dataGenreYear %>% filter(Genre == sprintf("%s", genre_))
+print(ggplot(dataOneGenre)+
+        geom_line(aes(x = as.factor(Year), y = Count * (max(dataOneGenre$MeanRev, na.rm = TRUE)/max(dataOneGenre$Count, na.rm = TRUE)), group = Genre, colour = "red"),size = 1.5)+
+        geom_line(aes(x = as.factor(Year), y = MeanRev, group = Genre, colour = "cyan4"), size = 1.5)+
+        geom_text(aes(label=as.integer(MeanRev), x = as.factor(Year), y = MeanRev))+
+        geom_text(aes(label=as.integer(Count), x = as.factor(Year), y = Count * (max(dataOneGenre$MeanRev, na.rm = TRUE)/max(dataOneGenre$Count, na.rm = TRUE))))+
+        scale_y_continuous(sec.axis = sec_axis(~ . / (max(dataOneGenre$MeanRev, na.rm = TRUE)/max(dataOneGenre$Count, na.rm = TRUE)), name = "Count"))+
+        scale_color_discrete(name = "Keterangan", label = c("Revenue in Millions","Count"))+
+        theme(axis.text=element_text(size=11), axis.title=element_text(size=24), plot.title = element_text(size = 36, face = "bold"))+
+        theme(axis.text.y.left = element_text(colour = "red"),
+        axis.title.y.left = element_text(colour = "red"),
+        axis.text.y.right = element_text(colour = "cyan4"),
+        axis.title.y.right = element_text(colour = "cyan4"))+
+        ggtitle(sprintf("Genre: %s", genre_))+
+        xlab("Year")+
+        ylab("Revenue (in million dollars)"))
 }
 ```
 
@@ -162,23 +296,6 @@ for(genre_ in selectedGenre){
 }
 ```
 
-## Analisis Data (3)
-Selain itu juga, kami membuat barplot horizontal yang menunjukkan total jumlah film 	bedasarkan genre. Untuk y-label adalah genre film. Untuk x-label menggunakan count 	yang merupakan banyaknya jumlah film. Berikut barplot yang kami buat:
-
-```{r echo=TRUE, fig.show='hold', fig.align='center', warning=FALSE, message=FALSE}
-dataGenreTotal <- dataGenreYear %>%
-  group_by(Genre) %>%
-  summarise(Count = sum(Count), MeanRev = mean(MeanRev))
-
-dataGenreTotal
-
-ggplot(dataGenreTotal, aes(x = reorder(Genre, Count), y = Count))+
-  geom_bar(stat = 'identity')+
- 	coord_flip()+
- 	xlab("Genre")+
-  ylab("Count")+
-  ggtitle("Jumlah Seluruh Film Bedasarkan Genre")
-```
 
 ## Analisis Data (4)
 Selain itu juga, kami membuat barplot horizontal yang menunjukkan total jumlah film 	bedasarkan genre. Untuk y-label adalah genre film. Untuk x-label menggunakan count 	yang merupakan banyaknya jumlah film. Berikut barplot yang kami buat:
@@ -193,7 +310,7 @@ ggplot(dataGenreTotal, aes(x = reorder(Genre, MeanRev), y = MeanRev))+
 ```
 
 ## Insight dan Manfaat
-Dari Visualisasi plot-plot yang kami sudah buat didapatkan beberapa insight:
+
 
 
 <ul>
