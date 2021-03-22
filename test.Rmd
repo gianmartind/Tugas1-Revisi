@@ -29,10 +29,22 @@ Berikut penjelasan singkat tiap kolom dalam dataset IMDB-Movie-Data.csv:
 11.	Revenue 	: Penghasilan yang dihasilkan dari film dalam satuan juta Dollar 			Amerika
 12.	Metascore 	: Penilaian dari kritikus dengan skala 0 – 100
 
+## Persiapan awal
 
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+#Import library yang diperlukan
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+
+#Import dataset yang digunakan
+data <- read.csv("IMDB-Movie-Data.csv")
+head(data)
+```
 
 ## 1. Berapa jumlah Genre yang dihasilkan per tahunnya?
 
+Kami akan menghitung berapa film yang dihasilkan untuk tiap genre per tahunnya, guna melihat tren kenaikan atau penurunan produksi film.
 
 Diperlukan Tabel seperti berikut:
 
@@ -51,21 +63,6 @@ Keterangan:
         </ul>
     </li>
 </ul>
-
-
-## Persiapan awal
-
-```{r echo=TRUE, warning=FALSE, message=FALSE}
-#Import library yang diperlukan
-library(ggplot2)
-library(dplyr)
-library(tidyr)
-
-#Import dataset yang digunakan
-data <- read.csv("IMDB-Movie-Data.csv")
-head(data)
-```
-
 
 ## Penyiapan Data
 
@@ -378,6 +375,220 @@ Dari insight-insight yang kami dapatkan, keputusan bisnis yang dapat dilakukan:
       </li>
       <li>
       Pihak produksi dapat untuk menghindari merilis film di tahun itu, jika pada tahun tersebut terdapat banyak film lain dengan Genre yang sama. Akan lebih baik untuk         menggeser jadwal tayangnya karena memungkinkan untuk lebih menguntungkan dari segi pendapatan.
+      </li>
+    </ul>
+  </li>
+</ul>
+
+## 2. Apakah seorang Sutradara (Director) cenderung bekerjasama dengan Aktor-aktor yang sama.
+
+Kami ingin mencari tahu seberapa sering seorang sutradara bekerjasama dengan aktor yang sama lebih dari satu kali.
+
+Diperlukan tabel sebagai berikut:
+
+- DataActorDirector(Director, Actor, CountFilm)
+
+
+Keterangan:
+<ul>
+    <li>
+        <ul>
+            <li>Director  : Sutradara dari film </li>
+            <li>Genre	    : Aktor film </li>
+            <li>CountFilm	: Jumlah Film yang disutradarai dan dimainkan</li>
+        </ul>
+    </li>
+</ul>
+
+## Penyiapan Data
+
+Dari dataframe yang setiap baris di kolom Actor-nya memiliki lebih dari satu aktor, akan dibuat 4 kolom baru (jumlah actor yang tertulis untuk satu film tidak mungkin melebihi 4). Setiap kolom baru yang dibuat (Actor1, Actor2, Actor3, Actor4) akan berisi hasil pemisahan Actors.
+```{r echo=TRUE}
+#Import ulang dataset yang digunakan
+data <- read.csv("IMDB-Movie-Data.csv")
+
+i <- 1
+while (i <= nrow(data)) {
+  Actors <- unlist(strsplit(data$Actors[i], ",", fixed = TRUE))
+  data$Actor1[i] <- Actors[1]
+  data$Actor2[i] <- Actors[2]
+  data$Actor3[i] <- Actors[3]
+  data$Actor4[i] <- Actors[4]
+  i <- i + 1
+}
+
+#Tampilkan kolom: Title, Genre, Genre1, Genre2, Genre3
+head(data %>% select(Title, Actors, Actor1, Actor2, Actor3, Actor4))
+```
+
+## Penyiapan Data (2)
+
+Buat dataframe baru dengan menggabungkan Aktor dari 4 kolom ke satu kolom dengan menambahkan 1 baris untuk tiap Aktor. Untuk film yang memiliki lebih dari 1 aktor akan muncul sebanyak jumlah genre yang dimiliki film tersebut.
+```{r echo=TRUE}
+dataActor1 <- data.frame(data$Title, data$Year, data$Director, data$Actor1)
+colnames(dataActor1) <- c("Title", "Year", "Director", "Actor")
+
+dataActor2 <- data.frame(data$Title, data$Year, data$Director, data$Actor2)
+colnames(dataActor2) <- c("Title", "Year", "Director", "Actor")
+dataActor2 <- dataActor2 %>% drop_na(Actor)
+
+dataActor3 <- data.frame(data$Title, data$Year, data$Director, data$Actor3)
+colnames(dataActor3) <- c("Title", "Year", "Director", "Actor")
+dataActor3 <- dataActor3 %>% drop_na(Actor)
+
+dataActor4 <- data.frame(data$Title, data$Year, data$Director, data$Actor4)
+colnames(dataActor4) <- c("Title", "Year", "Director", "Actor")
+dataActor4 <- dataActor4 %>% drop_na(Actor)
+
+dataActor <- bind_rows(dataActor1, dataActor2, dataActor3, dataActor4)
+head(dataActor %>% arrange(Title))
+```
+
+## Penyiapan Data (3)
+
+Kelompokkan data berdasarkan Director dan aktor, lalu hitung jumlah film yang disutradarai dan dimainkan. Hanya akan digunakan sutradara yang sudah membuat lebih dari 1 film.
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+dataActorDirector <- inner_join(dataActor %>% group_by(Director) %>% summarise(Count = n_distinct(Title)) %>% filter(Count > 1), dataActor, by = "Director") %>% 
+                        group_by(Director, Actor) %>%
+                        summarise(CountFilm = n())
+
+dataActorDirector
+```
+
+## Analisis Data
+
+Dibuat plot untuk menunjukan pasangan sutradara dan aktor dan berapa kali mereka bekerja bersama.
+```{r echo=TRUE, fig.show='hold', fig.align='center'}
+ggplot(dataActorDirector, aes(x = CountFilm))+
+  geom_bar()+
+  xlab("Berapa kali Director dan Aktor bekerja bersama")+
+  ylab("Banyaknya")+
+  ggtitle("Seberapa sering seorang director dan aktor bekerja bersama")
+```
+
+## Insight dan Manfaat
+
+Dari Visualisasi plot yang kami sudah buat didapatkan insight:
+
+<ul>
+  <li>
+    Umumnya seorang sutradara hanya bekerja bersama dengan seorang aktor sebanyak satu kali, dan sangat jarang lebih dari satu kali.
+  </li>
+</ul>
+
+## Penggalian Insight Baru
+
+Dari analisis yang telah dilakukan sebelumnya dan dari insight yang didapat, kami berusaha untuk menggali data lebih dalam dan mencoba untuk melihat bagaimana hubungan antara seringnya seorang sutradara dan aktor bekerja bersama dan pendapatan yang dihasilkan.
+
+Untuk itu diperlukan tabel dengan bentuk sebagai berikut:
+
+- DataActorDirector(Director, Actor, CountFilm, MeanRev)
+
+
+Keterangan:
+
+<ul>
+    <li>
+        <ul>
+            <li>Director  : Sutradara dari film </li>
+            <li>Genre	    : Aktor film </li>
+            <li>CountFilm	: Jumlah Film yang disutradarai dan dimainkan</li>
+            <li>MeanRev   : Rata-rata pendapatan dari film</li>
+        </ul>
+    </li>
+</ul>
+
+## Penyiapan Data
+
+Dari dataframe yang setiap baris di kolom Actor-nya memiliki lebih dari satu aktor, akan dibuat 4 kolom baru (jumlah actor yang tertulis untuk satu film tidak mungkin melebihi 4). Setiap kolom baru yang dibuat (Actor1, Actor2, Actor3, Actor4) akan berisi hasil pemisahan Actors.
+```{r echo=TRUE}
+i <- 1
+while (i <= nrow(data)) {
+  Actors <- unlist(strsplit(data$Actors[i], ",", fixed = TRUE))
+  data$Actor1[i] <- Actors[1]
+  data$Actor2[i] <- Actors[2]
+  data$Actor3[i] <- Actors[3]
+  data$Actor4[i] <- Actors[4]
+  i <- i + 1
+}
+
+#Tampilkan kolom: Title, Genre, Genre1, Genre2, Genre3
+head(data %>% select(Title, Actors, Actor1, Actor2, Actor3, Actor4))
+```
+
+## Penyiapan Data (2)
+
+Buat dataframe baru dengan menggabungkan Aktor dari 4 kolom ke satu kolom dengan menambahkan 1 baris untuk tiap Aktor. Untuk film yang memiliki lebih dari 1 aktor akan muncul sebanyak jumlah genre yang dimiliki film tersebut. Juga tambahkan kolom Revenue untuk menghitung pendapatan film.
+```{r echo=TRUE}
+dataActor1 <- data.frame(data$Title, data$Year, data$Director, data$Actor1, data$Revenue..Millions.)
+colnames(dataActor1) <- c("Title", "Year", "Director", "Actor", "Revenue")
+
+dataActor2 <- data.frame(data$Title, data$Year, data$Director, data$Actor2, data$Revenue..Millions.)
+colnames(dataActor2) <- c("Title", "Year", "Director", "Actor", "Revenue")
+dataActor2 <- dataActor2 %>% drop_na(Actor)
+
+dataActor3 <- data.frame(data$Title, data$Year, data$Director, data$Actor3, data$Revenue..Millions.)
+colnames(dataActor3) <- c("Title", "Year", "Director", "Actor", "Revenue")
+dataActor3 <- dataActor3 %>% drop_na(Actor)
+
+dataActor4 <- data.frame(data$Title, data$Year, data$Director, data$Actor4, data$Revenue..Millions.)
+colnames(dataActor4) <- c("Title", "Year", "Director", "Actor", "Revenue")
+dataActor4 <- dataActor4 %>% drop_na(Actor)
+
+dataActor <- bind_rows(dataActor1, dataActor2, dataActor3, dataActor4)
+head(dataActor %>% arrange(Title))
+```
+
+## Penyiapan Data (3)
+
+Kelompokkan data berdasarkan Director dan aktor, lalu hitung jumlah film yang disutradarai dan dimainkan juga hitung rata-rata pendapatan dari film-film tersebut. Hanya akan digunakan sutradara yang sudah membuat lebih dari 1 film.
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+dataActorDirector <- inner_join(dataActor %>% group_by(Director) %>% summarise(Count = n_distinct(Title)) %>% filter(Count > 1), dataActor, by = "Director") %>% 
+                        group_by(Director, Actor) %>%
+                        summarise(CountFilm = n(), MeanRev = mean(Revenue, na.rm = TRUE))
+
+dataActorDirector
+```
+
+## Analisis Data
+
+Dibuat plot untuk menunjukan berapa kali sutradara dan aktor bekerja bersama dan rata-rata pendapatan dari film yang dihasilkan.
+```{r echo=TRUE, fig.show='hold', fig.align='center'}
+#Untuk tiap kelompok (paling banyak sutradara dan aktor bekerja bersama sebanyak 4 kali)
+counts <- c("1", "2", "3", "4")
+
+#Hitung rata-rata revenue untuk tiap kategori
+rev <- c(mean(dataActorDirector$MeanRev[dataActorDirector$CountFilm == 1], na.rm = TRUE), mean(dataActorDirector$MeanRev[dataActorDirector$CountFilm == 2], na.rm = TRUE), mean(dataActorDirector$MeanRev[dataActorDirector$CountFilm == 3], na.rm = TRUE), mean(dataActorDirector$MeanRev[dataActorDirector$CountFilm == 4], na.rm = TRUE))
+
+#Buat dataframe baru untuk di buat plot
+dataActor_5 <- data.frame(counts, rev)
+
+ggplot(dataActor_5, aes(x = counts, y = rev))+
+  geom_col()+
+  ggtitle("Rata-rata Revenue untuk seberapa sering Director dan Aktor bekerja bersama")+
+  xlab("Berapa kali bekerja bersama")+
+  ylab("Rata-rata Revenue yang diperoleh")
+```
+
+## Insight dan Manfaat
+
+Dari hasil analisis, kami mendapatkan insight sebagai berikut:
+
+<ul>
+  <li>
+    Semakin sering seorang sutradara dan aktor bekerja bersama dalam suatu film, rata-rata pendapatannya juga akan semakin tinggi.
+  </li>
+</ul>
+
+## Kesimpulan
+
+Dari insight-insight yang kami dapatkan, keputusan bisnis yang dapat dilakukan:
+
+<ul>
+  <li>Dari analisis pertama dan kedua, didapat kesimpulan:
+    <ul>
+      <li>
+        Bagi pihak produksi film, akan lebih menguntungkan dari segi pendapatan bila membuat film yang disutradarai dan dimainkan oleh sutradara dan aktor yang sudah sering bekerja bersama. Terutama bagi film-film yang merupakan serial atau lanjutan dari film sebelumnya. Begitu juga bagi sutradara lebih baik bila bekerja bersama lagi dengan aktor yang sebelumnya pernah bekerja bersama.
       </li>
     </ul>
   </li>
