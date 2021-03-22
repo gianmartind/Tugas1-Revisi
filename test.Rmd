@@ -118,7 +118,7 @@ dataGenreYear
 ## Analisis Data
 
 Dibuat plot untuk menunjukan jumlah film yang diproduksi untuk setiap genre tiap tahunnya.
-```{r echo=TRUE, out.width="25%", out.height="25%", fig.show='hold'}
+```{r echo=TRUE, fig.width=7, fig.height=4, fig.show='hold'}
 allGenre <- unique(dataGenreYear$Genre)
 
 for(genre_ in allGenre){
@@ -135,6 +135,7 @@ for(genre_ in allGenre){
 ```
 
 ## Penyiapan Data (4)
+
 Buat dataframe untuk menghitung jumlah film yang dihasilkan untuk tiap genre dari seluruh tahun.
 ```{r echo=TRUE, warning=FALSE, message=FALSE}
 dataGenreTotal <- dataGenreYear %>%
@@ -145,8 +146,8 @@ dataGenreTotal
 ```
 
 ## Analisis Data (2)
-Kami membuat barplot horizontal yang menunjukkan total jumlah film 	bedasarkan genre. Untuk y-label adalah genre film. Untuk x-label menggunakan count 	yang merupakan banyaknya jumlah film. Berikut barplot yang kami buat:
 
+Kami membuat barplot horizontal yang menunjukkan total jumlah film 	bedasarkan genre. Untuk y-label adalah genre film. Untuk x-label menggunakan count 	yang merupakan banyaknya jumlah film. Berikut barplot yang kami buat:
 ```{r echo=TRUE, fig.show='hold', fig.align='center'}
 ggplot(dataGenreTotal, aes(x = reorder(Genre, Count), y = Count))+
   geom_bar(stat = 'identity')+
@@ -155,11 +156,11 @@ ggplot(dataGenreTotal, aes(x = reorder(Genre, Count), y = Count))+
   ylab("Count")+
   theme(axis.text=element_text(size=12), axis.title=element_text(size=24), plot.title = element_text(size = 20, face = "bold"))+
   ggtitle("Jumlah Seluruh Film Bedasarkan Genre")
-
 ```
 
 
 ## Insight dan Manfaat
+
 Dari Visualisasi plot-plot yang kami sudah buat didapatkan beberapa insight:
 
 <ul>
@@ -188,6 +189,7 @@ Dari Visualisasi plot-plot yang kami sudah buat didapatkan beberapa insight:
 </ul>
 
 ## Penggalian Insight Baru
+
 Dari analisis yang telah dilakukan didapat beberapa insight seperti yang sudah dipaparkan. Dari insight-insight tersebut kami berusaha untuk menggali lebih dalam untuk mendapatkan insight baru, dengan melihat bagaimana hubungan antara pendapatan (Revenue) yang dihasilkan oleh film dan jumlah film yang diproduksi.
 
 Untuk itu diperlukan tabel dengan bentuk sebagai berikut:
@@ -210,6 +212,7 @@ Keterangan:
 </ul>
 
 ## Penyiapan Data 
+
 Dari dataframe yang setiap baris di kolom Genre-nya memiliki lebih dari satu genre, akan dibuat 3 kolom baru (jumlah genre untuk satu film tidak mungkin melebihi 3). Setiap kolom baru yang dibuat (Genre1, Genre2, Genre3) akan berisi hasil pemisahan Genre.
 ```{r echo=TRUE}
 i <- 1
@@ -225,8 +228,8 @@ head(data %>% select(Title, Genre, Genre1, Genre2, Genre3, Revenue..Millions.))
 ```
 
 ## Penyiapan Data (2)
-Buat dataframe baru dengan menggabungkan Genre dari 3 kolom ke satu kolom dengan menambahkan 1 baris untuk tiap Genre. Untuk film yang memiliki lebih dari 1 genre akan muncul sebanyak jumlah genre yang dimiliki film tersebut. Sertakan juga kolom Revenue untuk menghitung pendapatan tiap film.
 
+Buat dataframe baru dengan menggabungkan Genre dari 3 kolom ke satu kolom dengan menambahkan 1 baris untuk tiap Genre. Untuk film yang memiliki lebih dari 1 genre akan muncul sebanyak jumlah genre yang dimiliki film tersebut. Sertakan juga kolom Revenue untuk menghitung pendapatan tiap film.
 ```{r echo=TRUE}
 dataGenre1 <- data.frame(data$Title, data$Year, data$Genre1, data$Revenue..Millions.)
 colnames(dataGenre1) <- c("Title", "Year", "Genre", "Revenue")
@@ -252,15 +255,12 @@ dataGenreYear <- dataGenre %>%
                   summarise(Count = n(), MeanRev = mean(Revenue, na.rm = TRUE))
 
 dataGenreYear
-
 ```
-
 
 ## Analisis Data
 
 Dibuat plot untuk menunjukan jumlah film yang diproduksi untuk setiap genre tiap tahunnya dan hubungannya dengan Revenue.
-
-```{r echo=TRUE, out.width="35%", out.height="35%", fig.show='hold', warning=FALSE}
+```{r echo=TRUE, out.width="50%", out.height="50%", fig.show='hold', warning=FALSE}
 allGenre <- unique(dataGenreYear$Genre)
 
 for(genre_ in allGenre){
@@ -272,7 +272,7 @@ print(ggplot(dataOneGenre)+
         geom_text(aes(label=as.integer(Count), x = as.factor(Year), y = Count * (max(dataOneGenre$MeanRev, na.rm = TRUE)/max(dataOneGenre$Count, na.rm = TRUE))))+
         scale_y_continuous(sec.axis = sec_axis(~ . / (max(dataOneGenre$MeanRev, na.rm = TRUE)/max(dataOneGenre$Count, na.rm = TRUE)), name = "Count"))+
         scale_color_discrete(name = "Keterangan", label = c("Revenue in Millions","Count"))+
-        theme(axis.text=element_text(size=11), axis.title=element_text(size=24), plot.title = element_text(size = 36, face = "bold"))+
+        theme(axis.text=element_text(size=11), axis.title=element_text(size=24), plot.title = element_text(size = 36, face = "bold"), legend.position="top")+
         theme(axis.text.y.left = element_text(colour = "red"),
         axis.title.y.left = element_text(colour = "red"),
         axis.text.y.right = element_text(colour = "cyan4"),
@@ -285,8 +285,7 @@ print(ggplot(dataOneGenre)+
 
 ## Analisis Data (2)
 
-Kami menampilkan plot dari rata-rata Revenue per tahun. Terdapat plot yang cukup menarik dimana ketika jumlah prodksi film tersebut naik, maka revenue yang dihasilkan akan cenderung menurun.
-
+Kami menampilkan plot dari rata-rata Revenue per tahun. Terdapat plot yang cukup menarik dimana ketika jumlah produksi film tersebut naik, maka revenue yang dihasilkan akan cenderung menurun.
 ```{r echo=FALSE, out.width="50%", out.height="50%", fig.show='hold'}
 selectedGenre <- c("Action", "Comedy", "Crime", "Romance")
 
@@ -299,7 +298,7 @@ print(ggplot(dataOneGenre)+
         geom_text(aes(label=as.integer(Count), x = as.factor(Year), y = Count * (max(dataOneGenre$MeanRev, na.rm = TRUE)/max(dataOneGenre$Count, na.rm = TRUE))))+
         scale_y_continuous(sec.axis = sec_axis(~ . / (max(dataOneGenre$MeanRev, na.rm = TRUE)/max(dataOneGenre$Count, na.rm = TRUE)), name = "Count"))+
         scale_color_discrete(name = "Keterangan", label = c("Revenue in Millions","Count"))+
-        theme(axis.text=element_text(size=11), axis.title=element_text(size=24), plot.title = element_text(size = 36, face = "bold"))+
+        theme(axis.text=element_text(size=11), axis.title=element_text(size=24), plot.title = element_text(size = 36, face = "bold"), legend.position="top")+
         theme(axis.text.y.left = element_text(colour = "red"),
         axis.title.y.left = element_text(colour = "red"),
         axis.text.y.right = element_text(colour = "cyan4"),
@@ -308,29 +307,24 @@ print(ggplot(dataOneGenre)+
         xlab("Year")+
         ylab("Revenue (in million dollars)"))
 }
-
 ```
 
 ## Penyiapan Data (4)
 
-Kelompokkan data berdasarkan Genre, lalu hitung rata-rata pendapatan dari tiap genre.
-
+Buat dataframe untuk menghitung jumlah film yang dihasilkan untuk tiap genre dari seluruh tahun, dan nilai rata-rata pendapatannya
 ```{r echo=TRUE, warning=FALSE, message=FALSE}
-
 dataGenreTotal <- dataGenreYear %>%
   group_by(Genre) %>%
   summarise(Count = sum(Count), MeanRev = mean(MeanRev, na.rm = TRUE))
 
 dataGenreTotal
-
 ```
 
 ## Analisis Data (3)
 
 Selain itu juga, kami membuat barplot horizontal yang menunjukkan rata-rata revenue film. Untuk y-label adalah genre film. Untuk x-label menggunakan rata-rata revenue yang dihasilkan dengan satuan juta dollar. Berikut barplot yang kami buat:
-
 ```{r echo=TRUE, fig.show='hold', fig.align='center'}
-
+#Rata-rata pendapatan
 ggplot(dataGenreTotal, aes(x = reorder(Genre, MeanRev), y = MeanRev))+
  	geom_bar(stat = 'identity')+
 	coord_flip()+
@@ -339,6 +333,7 @@ ggplot(dataGenreTotal, aes(x = reorder(Genre, MeanRev), y = MeanRev))+
   theme(axis.text=element_text(size=12), axis.title=element_text(size=24), plot.title = element_text(size = 20, face = "bold"))+
  	ggtitle("Rata-rata Revenue Film Bedasarkan Genre")
 
+#Jumlah film di Produksi
 ggplot(dataGenreTotal, aes(x = reorder(Genre, Count), y = Count))+
   geom_bar(stat = 'identity')+
  	coord_flip()+
@@ -346,10 +341,10 @@ ggplot(dataGenreTotal, aes(x = reorder(Genre, Count), y = Count))+
   ylab("Count")+
   theme(axis.text=element_text(size=12), axis.title=element_text(size=24), plot.title = element_text(size = 20, face = "bold"))+
   ggtitle("Jumlah Seluruh Film Bedasarkan Genre")
-
 ```
 
 ## Insight dan Manfaat
+
 Dari hasil analisis, kami mendapatkan insight sebagai berikut:
 
 <ul>
@@ -362,6 +357,7 @@ Dari hasil analisis, kami mendapatkan insight sebagai berikut:
 </ul>
 
 ## Kesimpulan
+
 Dari insight-insight yang kami dapatkan, keputusan bisnis yang dapat dilakukan:
 
 <ul>
@@ -378,7 +374,7 @@ Dari insight-insight yang kami dapatkan, keputusan bisnis yang dapat dilakukan:
   <li> Dari analisis kedua, didapatkan kesimpulan:
     <ul>
       <li>
-      Pihak produksi film dapat lebih memilih Animation, Adventure ataupn Sci-Fi untuk mendapatkan pendapatan yang tinggi dibandingkan film genre yang lain seperti           Horror, Romance, dan Music.
+      Pihak produksi film dapat lebih memilih Animation, Adventure ataupun Sci-Fi untuk mendapatkan pendapatan yang tinggi dibandingkan film genre yang lain seperti           Horror, Romance, dan Music.
       </li>
       <li>
       Pihak produksi dapat untuk menghindari merilis film di tahun itu, jika pada tahun tersebut terdapat banyak film lain dengan Genre yang sama. Akan lebih baik untuk         menggeser jadwal tayangnya karena memungkinkan untuk lebih menguntungkan dari segi pendapatan.
