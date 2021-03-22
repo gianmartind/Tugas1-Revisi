@@ -147,7 +147,7 @@ dataGenreTotal
 ## Analisis Data (2)
 Kami membuat barplot horizontal yang menunjukkan total jumlah film 	bedasarkan genre. Untuk y-label adalah genre film. Untuk x-label menggunakan count 	yang merupakan banyaknya jumlah film. Berikut barplot yang kami buat:
 
-```{r echo=TRUE, fig.show='hold', fig.align='center', out.width="125%", out.width="125%"}
+```{r echo=TRUE, fig.show='hold', fig.align='center'}
 ggplot(dataGenreTotal, aes(x = reorder(Genre, Count), y = Count))+
   geom_bar(stat = 'identity')+
  	coord_flip()+
@@ -155,7 +155,10 @@ ggplot(dataGenreTotal, aes(x = reorder(Genre, Count), y = Count))+
   ylab("Count")+
   theme(axis.text=element_text(size=12), axis.title=element_text(size=24), plot.title = element_text(size = 20, face = "bold"))+
   ggtitle("Jumlah Seluruh Film Bedasarkan Genre")
+
 ```
+
+
 ## Insight dan Manfaat
 Dari Visualisasi plot-plot yang kami sudah buat didapatkan beberapa insight:
 
@@ -249,10 +252,15 @@ dataGenreYear <- dataGenre %>%
                   summarise(Count = n(), MeanRev = mean(Revenue, na.rm = TRUE))
 
 dataGenreYear
+
 ```
+
+
 ## Analisis Data
+
 Dibuat plot untuk menunjukan jumlah film yang diproduksi untuk setiap genre tiap tahunnya dan hubungannya dengan Revenue.
-```{r echo=TRUE, out.width="25%", out.height="25%", fig.show='hold'}
+
+```{r echo=TRUE, out.width="35%", out.height="35%", fig.show='hold', warning=FALSE}
 allGenre <- unique(dataGenreYear$Genre)
 
 for(genre_ in allGenre){
@@ -277,83 +285,107 @@ print(ggplot(dataOneGenre)+
 
 ## Analisis Data (2)
 
+Kami menampilkan plot dari rata-rata Revenue per tahun. Terdapat plot yang cukup menarik dimana ketika jumlah prodksi film tersebut naik, maka revenue yang dihasilkan akan cenderung menurun.
+
 ```{r echo=FALSE, out.width="50%", out.height="50%", fig.show='hold'}
 selectedGenre <- c("Action", "Comedy", "Crime", "Romance")
 
 for(genre_ in selectedGenre){
-  dataOneGenre <- dataGenreYear %>% filter(Genre == sprintf("%s", genre_))
-  print(ggplot(dataOneGenre)+
-          geom_col(aes(x = factor(Year, levels = 2006:2016), y = Count * (max(dataOneGenre$MeanRev, na.rm = TRUE)/max(dataOneGenre$Count, na.rm = TRUE))), fill="cadetblue1")+
-          geom_line(aes(x = factor(Year, levels = 2006:2016), y = MeanRev, group = Genre), size = 1.5)+
-          geom_text(aes(label=as.integer(MeanRev), x = factor(Year, levels = 2006:2016), y = MeanRev))+
-          geom_text(aes(label=as.integer(Count), x = factor(Year, levels = 2006:2016), y = Count * (max(dataOneGenre$MeanRev, na.rm = TRUE)/max(dataOneGenre$Count, na.rm = TRUE))))+
-          scale_x_discrete(breaks=factor(2006:2016), drop=FALSE)+
-          scale_y_continuous(sec.axis = sec_axis(~ . / (max(dataOneGenre$MeanRev, na.rm = TRUE)/max(dataOneGenre$Count, na.rm = TRUE)), name = "Count"))+
-          theme(axis.text=element_text(size=14), axis.title=element_text(size=24), plot.title = element_text(size = 36, face = "bold"))+
-          ggtitle(sprintf("Genre: %s", genre_))+
-          xlab("Year")+
-          ylab("Revenue (in million dollars)"))
+dataOneGenre <- dataGenreYear %>% filter(Genre == sprintf("%s", genre_))
+print(ggplot(dataOneGenre)+
+        geom_line(aes(x = as.factor(Year), y = Count * (max(dataOneGenre$MeanRev, na.rm = TRUE)/max(dataOneGenre$Count, na.rm = TRUE)), group = Genre, colour = "red"),size = 1.5)+
+        geom_line(aes(x = as.factor(Year), y = MeanRev, group = Genre, colour = "cyan4"), size = 1.5)+
+        geom_text(aes(label=as.integer(MeanRev), x = as.factor(Year), y = MeanRev))+
+        geom_text(aes(label=as.integer(Count), x = as.factor(Year), y = Count * (max(dataOneGenre$MeanRev, na.rm = TRUE)/max(dataOneGenre$Count, na.rm = TRUE))))+
+        scale_y_continuous(sec.axis = sec_axis(~ . / (max(dataOneGenre$MeanRev, na.rm = TRUE)/max(dataOneGenre$Count, na.rm = TRUE)), name = "Count"))+
+        scale_color_discrete(name = "Keterangan", label = c("Revenue in Millions","Count"))+
+        theme(axis.text=element_text(size=11), axis.title=element_text(size=24), plot.title = element_text(size = 36, face = "bold"))+
+        theme(axis.text.y.left = element_text(colour = "red"),
+        axis.title.y.left = element_text(colour = "red"),
+        axis.text.y.right = element_text(colour = "cyan4"),
+        axis.title.y.right = element_text(colour = "cyan4"))+
+        ggtitle(sprintf("Genre: %s", genre_))+
+        xlab("Year")+
+        ylab("Revenue (in million dollars)"))
 }
+
 ```
 
+## Penyiapan Data (4)
 
-## Analisis Data (4)
-Selain itu juga, kami membuat barplot horizontal yang menunjukkan total jumlah film 	bedasarkan genre. Untuk y-label adalah genre film. Untuk x-label menggunakan count 	yang merupakan banyaknya jumlah film. Berikut barplot yang kami buat:
+Kelompokkan data berdasarkan Genre, lalu hitung rata-rata pendapatan dari tiap genre.
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+
+dataGenreTotal <- dataGenreYear %>%
+  group_by(Genre) %>%
+  summarise(Count = sum(Count), MeanRev = mean(MeanRev, na.rm = TRUE))
+
+dataGenreTotal
+
+```
+
+## Analisis Data (3)
+
+Selain itu juga, kami membuat barplot horizontal yang menunjukkan rata-rata revenue film. Untuk y-label adalah genre film. Untuk x-label menggunakan rata-rata revenue yang dihasilkan dengan satuan juta dollar. Berikut barplot yang kami buat:
 
 ```{r echo=TRUE, fig.show='hold', fig.align='center'}
+
 ggplot(dataGenreTotal, aes(x = reorder(Genre, MeanRev), y = MeanRev))+
  	geom_bar(stat = 'identity')+
 	coord_flip()+
 	xlab("Genre")+
   ylab("Revenue in Million Dollar")+
+  theme(axis.text=element_text(size=12), axis.title=element_text(size=24), plot.title = element_text(size = 20, face = "bold"))+
  	ggtitle("Rata-rata Revenue Film Bedasarkan Genre")
+
+ggplot(dataGenreTotal, aes(x = reorder(Genre, Count), y = Count))+
+  geom_bar(stat = 'identity')+
+ 	coord_flip()+
+ 	xlab("Genre")+
+  ylab("Count")+
+  theme(axis.text=element_text(size=12), axis.title=element_text(size=24), plot.title = element_text(size = 20, face = "bold"))+
+  ggtitle("Jumlah Seluruh Film Bedasarkan Genre")
+
 ```
 
 ## Insight dan Manfaat
-
-
+Dari hasil analisis, kami mendapatkan insight sebagai berikut:
 
 <ul>
-  <li>
-    Drama menjadi genre yang paling banyak dipilh sebagai genre untuk sebuah film, disusul Action dan Comedy. Genre Musical dan Western jarang dibuat sebagai film. 
-  </li>
   <li>
     Film animasi lebih banyak menghasilkan uang ( dilihat dari pehitungan rata-rata revenue ) dari genre manapun. Film Adventure juga menjadi film kedua dengan rata-rata revenue     yang tinggi. Film Horror memiliki rata-rata revenue yang paling rendah dari seluruh genre.
   </li>
   <li>
-    Produksi film pada tahun 2016 meroket daripada tahun-tahun sebelumnya. Hal ini juga menandakan rumah produksi film sudah melihat film menjadi penghasil uang yang cukup besar.
-  </li>
-  <li>
-    Film Action, Drama, Adventure, Animation, Biography, Comedy, Drime, Horror, History mengalami kelonjakan yang sangat tinggi pada tahun 2016
-  </li>
-  <li>
     Di beberapa kasus, semakin banyak film yang diproduksi rata-rata pendapatan yang diperoleh semakin kecil.
-  </li>
-  <li>
-    Ada beberapa genre yang tidak tercatat—atau bisa saja tidak ada film di tahun itu diproduksi. Berikut Rinciannya:
-    <ul>
-      <li>2006: Western, Musical</li>
-      <li>2007: Western, War, Sport</li>
-      <li>2008: Western</li>
-      <li>2009: Western, Musical, Music, History</li>
-      <li>2010: Musical, Sport, Music, History</li>
-      <li>2011: Western, Musical, War, History</li>
-      <li>2012: War, Sport</li>
-      <li>2013: Musical, War</li>
-      <li>2014: Musical</li>
-      <li>2015: Musical</li>
-      <li>2016: Musical</li>
-    </ul>
   </li>
 </ul>
 
-## Insight dan Manfaat (2)
+## Kesimpulan
 Dari insight-insight yang kami dapatkan, keputusan bisnis yang dapat dilakukan:
 
--	Pihak manajemen bioskop dapat membuka slot kuota penayangan lebih banyak lagi untuk film yang bergenre Drama, Action, dan juga Comedy dibandingkan film-film Musical, Western, maupun War. Hal ini akan membuat bioskop lebih ramai dan menggaet lebih banyak penonton.
--	Pihak produksi film dapat lebih memilih Animation, Adventure ataupn Sci-Fi untuk mendapatkan pendapatan yang tinggi dibandingkan film genre yang lain seperti Horror, Romance, dan Music. 
--	Pihak produksi film yang baru-baru dibuat seperti A24 bisa lebih memilih genre Drama maupun Action untuk meningkatkan popularitas rumah produksi mereka
-- Pihak produksi dapat untuk menghindari merilis film di tahun itu, jika pada tahun tersebut terdapat banyak film lain dengan Genre yang sama. Akan lebih baik untuk menggeser jadwal tayangnya karena memungkinkan untuk lebih menguntungkan dari segi pendapatan.
+<ul>
+  <li>Dari analisis pertama, didapatkan kesimpulan
+    <ul>
+      <li>
+        Pihak manajemen bioskop dapat membuka slot kuota penayangan lebih banyak lagi untuk film yang bergenre Drama, Action, dan juga Comedy dibandingkan film-film            Musical, Western, maupun War. Hal ini akan membuat bioskop lebih ramai dan menggaet lebih banyak penonton.
+      </li>
+      <li>
+        Pihak produksi film yang baru-baru dibuat seperti A24 bisa lebih memilih genre Drama maupun Action untuk meningkatkan popularitas rumah produksi mereka
+      </li>
+    </ul>
+  </li>
+  <li> Dari analisis kedua, didapatkan kesimpulan:
+    <ul>
+      <li>
+      Pihak produksi film dapat lebih memilih Animation, Adventure ataupn Sci-Fi untuk mendapatkan pendapatan yang tinggi dibandingkan film genre yang lain seperti           Horror, Romance, dan Music.
+      </li>
+      <li>
+      Pihak produksi dapat untuk menghindari merilis film di tahun itu, jika pada tahun tersebut terdapat banyak film lain dengan Genre yang sama. Akan lebih baik untuk         menggeser jadwal tayangnya karena memungkinkan untuk lebih menguntungkan dari segi pendapatan.
+      </li>
+    </ul>
+  </li>
+</ul>
 
 ## -
 <h1 style="left: 50%; top: 50%; position: absolute">Terima Kasih</h1>
