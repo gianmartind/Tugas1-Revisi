@@ -1,6 +1,10 @@
 ---
-title: "imdb-data2_pres"
-author: "GMD"
+title: "Analisis Data Film IMDb"
+author: 
+- Gian Martin D. (6181801015)
+- Arthur Everardus F. (6181801035)
+- Michael Alvino (6181801041)
+- Yalvi Hidayat (6181801044)
 date: "3/21/2021"
 output:
   slidy_presentation:
