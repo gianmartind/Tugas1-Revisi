@@ -3,6 +3,7 @@ title: "imdb-data2_pres"
 author: "GMD"
 date: "3/21/2021"
 output:
+  beamer_presentation: default
   slidy_presentation:
     df_print: paged
 ---
@@ -77,7 +78,7 @@ while (i <= nrow(data)) {
   i <- i + 1
 }
 #Tampilkan kolom: Title, Genre, Genre1, Genre2, Genre3
-head(data %>% select(Title, Genre, Genre1, Genre2, Genre3) %>% arrange(Title))
+head(data %>% select(Title, Genre, Genre1, Genre2, Genre3))
 ```
 
 
@@ -221,7 +222,7 @@ while (i <= nrow(data)) {
   i <- i + 1
 }
 #Tampilkan kolom: Title, Genre, Genre1, Genre2, Genre3
-head(data %>% select(Title, Genre, Genre1, Genre2, Genre3, Revenue..Millions.) %>% arrange(Title))
+head(data %>% select(Title, Genre, Genre1, Genre2, Genre3, Revenue..Millions.))
 ```
 
 ## Penyiapan Data (2)
@@ -418,7 +419,7 @@ while (i <= nrow(data)) {
 }
 
 #Tampilkan kolom: Title, Genre, Genre1, Genre2, Genre3
-head(data %>% select(Title, Actors, Actor1, Actor2, Actor3, Actor4) %>% arrange(Title))
+head(data %>% select(Title, Actors, Actor1, Actor2, Actor3, Actor4))
 ```
 
 ## Penyiapan Data (2)
@@ -452,7 +453,7 @@ dataActorDirector <- inner_join(dataActor %>% group_by(Director) %>% summarise(C
                         group_by(Director, Actor) %>%
                         summarise(CountFilm = n())
 
-dataActorDirector %>% arrange(CountFilm)
+dataActorDirector
 ```
 
 ## Analisis Data
@@ -513,7 +514,7 @@ while (i <= nrow(data)) {
 }
 
 #Tampilkan kolom: Title, Genre, Genre1, Genre2, Genre3
-head(data %>% select(Title, Actors, Actor1, Actor2, Actor3, Actor4) %>% arrange(Title))
+head(data %>% select(Title, Actors, Actor1, Actor2, Actor3, Actor4))
 ```
 
 ## Penyiapan Data (2)
@@ -547,7 +548,7 @@ dataActorDirector <- inner_join(dataActor %>% group_by(Director) %>% summarise(C
                         group_by(Director, Actor) %>%
                         summarise(CountFilm = n(), MeanRev = mean(Revenue, na.rm = TRUE))
 
-dataActorDirector %>% arrange(CountFilm)
+dataActorDirector
 ```
 
 ## Analisis Data
